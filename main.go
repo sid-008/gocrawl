@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/sid-008/gocrawl/queue"
 )
@@ -16,16 +17,21 @@ type Page struct {
 }
 
 func fetch(url string, queue *queue.Queue) {
+	x := strings.HasPrefix(url, "https")
+	if !x {
+		return
+	}
+
 	res, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	defer res.Body.Close() // need to make sure there are no resource leaks
 	log.Println("STATUS CODE:", res.StatusCode)
 
 	content, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	page := &Page{
 		url:  url,
@@ -50,7 +56,6 @@ func main() {
 	queue := &queue.Queue{}
 	queue.Enqueue(initialUrl)
 
-	fetch(initialUrl, queue)
 	for {
 		next := queue.Dequeue()
 		fmt.Println("The next url to be explored is:\n\n\n", next)
