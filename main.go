@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+
+	"github.com/sid-008/gocrawl/queue"
 )
 
 type Page struct {
@@ -13,7 +15,7 @@ type Page struct {
 	html string
 }
 
-func fetch(url string) {
+func fetch(url string, queue *queue.Queue) {
 	res, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -30,14 +32,28 @@ func fetch(url string) {
 		html: string(content),
 	}
 
+	findLinks(page, queue)
+}
+
+func findLinks(page *Page, queue *queue.Queue) {
 	re := regexp.MustCompile(`href=["']([^"']+)["']`)
 	body := page.html
 	links := re.FindAllStringSubmatch(body, -1)
 	for _, link := range links {
 		fmt.Println(link[1])
+		queue.Enqueue(link[1])
 	}
 }
 
 func main() {
-	fetch("https://www.google.com")
+	initialUrl := "https://google.com"
+	queue := &queue.Queue{}
+	queue.Enqueue(initialUrl)
+
+	fetch(initialUrl, queue)
+	for {
+		next := queue.Dequeue()
+		fmt.Println("The next url to be explored is:\n\n\n", next)
+		fetch(next, queue)
+	}
 }
