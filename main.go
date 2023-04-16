@@ -41,11 +41,6 @@ func fetch(url string, queue *queue.Queue, wg *sync.WaitGroup, urls chan string)
 		html: string(content),
 	}
 
-	findLinks(page, queue, wg, urls)
-}
-
-func findLinks(page *Page, queue *queue.Queue, wg *sync.WaitGroup, urls chan string) {
-	defer wg.Done()
 	re := regexp.MustCompile(`href=["']([^"']+)["']`)
 	body := page.html
 	links := re.FindAllStringSubmatch(body, -1)
@@ -77,15 +72,10 @@ func main() {
 	queue.Enqueue(initialUrl)
 
 	for {
-		/*count++
-		if count > 100000 {
-			break
-		}*/
 		next := queue.Dequeue()
 		wg.Add(1)
 		go fetch(next, queue, wg, urls)
 		wg.Add(1)
 		go consume(urls, wg)
 	}
-	// log.Println("count is:", count)
 }
